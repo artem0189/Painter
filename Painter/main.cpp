@@ -8,11 +8,16 @@ BOOL fDraw;
 RECT clientRect;
 WindowPaint* window;
 INT figureNumber = 1;
+COLORREF color = (COLORREF)RGB(255, 255, 255);
+INT thickness = 1;
 std::vector<POINT> points;
 std::vector<WCHAR> letters;
 
 VOID Draw(HDC hDc)
 {
+	SelectObject(hDc, CreateSolidBrush(color));
+	SelectObject(hDc, CreatePen(PS_SOLID, thickness, (COLORREF)RGB(0, 0, 0)));
+
 	switch (figureNumber) {
 	case 1:
 		MoveToEx(hDc, points[LAST_IND(points) - 1].x, points[LAST_IND(points) - 1].y, NULL);
@@ -38,6 +43,9 @@ VOID Draw(HDC hDc)
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	PAINTSTRUCT ps;
+	WORD param;
+
 	switch (uMsg) {
 	case WM_CREATE:
 		fDraw = false;
@@ -45,8 +53,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		window = new WindowPaint(clientRect);
 		break;
 	case WM_COMMAND:
-		figureNumber = LOWORD(wParam);
-		points.clear();
+		param = LOWORD(wParam);
+		if (param >= 1 && param <= 6) {
+			figureNumber = LOWORD(wParam);
+			points.clear();
+		}
+
+		if (param >= 100) {
+			thickness = param / 100;
+		}
+
+		switch (param) {
+		case 10:
+			color = (COLORREF)RGB(255, 255, 255);
+			break;
+		case 11:
+			color = (COLORREF)RGB(255, 0, 0);
+			break;
+		case 12:
+			color = (COLORREF)RGB(0, 255, 0);
+			break;
+		case 13:
+			color = (COLORREF)RGB(0, 0, 255);
+			break;
+		case 14:
+			color = (COLORREF)RGB(0, 0, 0);
+			break;
+		}
 		break;
 	case WM_KEYDOWN:
 		if (fDraw && figureNumber == 6) {
@@ -89,6 +122,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		if (fDraw) {
 			window->UpdateWindow(hWnd, clientRect);
 			points[points.size() - 1] = { LOWORD(lParam), HIWORD(lParam) };
+			SendMessage(hWnd, WM_PAINT, 0, 0);
 			HDC hDc = GetDC(hWnd);
 			Draw(hDc);
 			ReleaseDC(hWnd, hDc);
@@ -106,7 +140,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
 {
 	HWND hMainWnd;
-	HMENU hMenu, hPopupMenu;
+	HMENU hMenu, hPopupFigureMenu, hPopupColorMenu, hPopupThicknessMenu;
 	MSG msg;
 	WNDCLASSEX wc;
 
@@ -120,15 +154,32 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	hMainWnd = CreateWindowEx(NULL, L"MainWindow", L"Painter", WS_OVERLAPPED | WS_SYSMENU, 100, 100, 500, 500, NULL, NULL, hInst, NULL);
 
 	hMenu = CreateMenu();
-	hPopupMenu = CreateMenu();
-	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hPopupMenu, L"Фигуры");
+	hPopupFigureMenu = CreateMenu();
+	hPopupColorMenu = CreateMenu();
+	hPopupThicknessMenu = CreateMenu();
+	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hPopupFigureMenu, L"Фигуры");
 	{
-		AppendMenu(hPopupMenu, MF_STRING, 1, L"Прямая линия");
-		AppendMenu(hPopupMenu, MF_STRING, 2, L"Ломаная линия");
-		AppendMenu(hPopupMenu, MF_STRING, 3, L"Прямоугольник");
-		AppendMenu(hPopupMenu, MF_STRING, 4, L"Многоугольник");
-		AppendMenu(hPopupMenu, MF_STRING, 5, L"Эллипс");
-		AppendMenu(hPopupMenu, MF_STRING, 6, L"Текст");
+		AppendMenu(hPopupFigureMenu, MF_STRING, 1, L"Прямая линия");
+		AppendMenu(hPopupFigureMenu, MF_STRING, 2, L"Ломаная линия");
+		AppendMenu(hPopupFigureMenu, MF_STRING, 3, L"Прямоугольник");
+		AppendMenu(hPopupFigureMenu, MF_STRING, 4, L"Многоугольник");
+		AppendMenu(hPopupFigureMenu, MF_STRING, 5, L"Эллипс");
+		AppendMenu(hPopupFigureMenu, MF_STRING, 6, L"Текст");
+	}
+	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hPopupColorMenu, L"Цвет");
+	{
+		AppendMenu(hPopupColorMenu, MF_STRING, 10, L"Белый");
+		AppendMenu(hPopupColorMenu, MF_STRING, 11, L"Красный");
+		AppendMenu(hPopupColorMenu, MF_STRING, 12, L"Зелёный");
+		AppendMenu(hPopupColorMenu, MF_STRING, 13, L"Синий");
+		AppendMenu(hPopupColorMenu, MF_STRING, 14, L"Чёртный");
+	}
+	AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hPopupThicknessMenu, L"Толщина линии");
+	{
+		AppendMenu(hPopupThicknessMenu, MF_STRING, 100, L"1");
+		AppendMenu(hPopupThicknessMenu, MF_STRING, 200, L"2");
+		AppendMenu(hPopupThicknessMenu, MF_STRING, 400, L"4");
+		AppendMenu(hPopupThicknessMenu, MF_STRING, 800, L"8");
 	}
 	SetMenu(hMainWnd, hMenu);
 
