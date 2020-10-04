@@ -5,9 +5,9 @@
 
 class WindowPaint {
 public:
-	WindowPaint();
+	WindowPaint(RECT rect);
 	~WindowPaint();
-	VOID SaveWindow(HWND hWnd, RECT rect);
+	VOID SaveWindow(HWND hWnd);
 	VOID UpdateWindow(HWND hWnd, RECT rect);
 private:
 	ATL::CImage* image = new CImage();

@@ -1,8 +1,9 @@
 #include "WindowPaint.h"
 
-WindowPaint::WindowPaint()
+WindowPaint::WindowPaint(RECT rect)
 {
 	WindowPaint::image = new CImage();
+	image->Create(rect.right - rect.left, rect.bottom - rect.top, 32);
 }
 
 WindowPaint::~WindowPaint()
@@ -10,9 +11,8 @@ WindowPaint::~WindowPaint()
 	delete image;
 }
 
-VOID WindowPaint::SaveWindow(HWND hWnd, RECT rect)
+VOID WindowPaint::SaveWindow(HWND hWnd)
 {
-	image->Create(rect.right - rect.left, rect.bottom - rect.top);
 	HDC imageDc = image->GetDC();
 	PrintWindow(hWnd, imageDc, PW_CLIENTONLY);
 	image->ReleaseDC();
